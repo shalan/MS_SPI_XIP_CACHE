@@ -1,6 +1,6 @@
 {
     "info": {
-        "name": "MS_QSPI_XIP_CACHE",
+        "name": "MS_SPI_XIP_CACHE",
         "description": "AHB-Lite SPI Flash memory controller with direct mapped cache and support for XiP.",
         "repo": "https://github.com/shalan/MS_SPI_FLASH_CTRL",
         "owner": "Mohamed Shalan",

@@ -55,3 +55,6 @@ dkms.conf
 .vcd
 .vvp
 .out
+*.vcd
+tmp
+util

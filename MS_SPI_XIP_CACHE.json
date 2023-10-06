@@ -29,6 +29,14 @@
         "clock_freq_mhz": "40",
         "supply_voltage": [
             "n/a"
+        ],
+        "tech":[
+            "sky130":{
+                "gl_netlist": True,
+                "cell_count": "14348",
+                "is":"39.5",
+                "id":"126000"
+            }
         ]
     },
     "clock": "HCLK",

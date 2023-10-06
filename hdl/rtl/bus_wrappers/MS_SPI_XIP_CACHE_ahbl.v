@@ -53,9 +53,9 @@ module MS_SPI_XIP_CACHE_ahbl #(parameter NUM_LINES = 16) (
     wire            doe;
 
     // The State Machine
-    localparam [1:0]    st_idle    = 2'b00;
-    localparam [1:0]    st_wait    = 2'b01;
-    localparam [1:0]    st_rw      = 2'b10;
+    localparam [1:0]    IDLE    = 2'b00;
+    localparam [1:0]    WAIT    = 2'b01;
+    localparam [1:0]    RW      = 2'b10;
     
     reg [1:0]   state, nstate;
 
@@ -75,46 +75,55 @@ module MS_SPI_XIP_CACHE_ahbl #(parameter NUM_LINES = 16) (
     end
 
     always @ (posedge HCLK or negedge HRESETn)
-        if(HRESETn == 0) state <= st_idle;
+        if(HRESETn == 0) 
+            state <= IDLE;
         else 
             state <= nstate;
 
     always @* begin
-        nstate = st_idle;
+        nstate = IDLE;
         case(state)
-            st_idle :   if(HTRANS[1] & HSEL & HREADY & c_hit) 
-                            nstate = st_rw;
+            IDLE :   if(HTRANS[1] & HSEL & HREADY & c_hit) 
+                            nstate = RW;
                         else if(HTRANS[1] & HSEL & HREADY & ~c_hit) 
-                            nstate = st_wait;
+                            nstate = WAIT;
 
-            st_wait :   if(c_wr[1]) 
-                            nstate = st_rw; 
+            WAIT :   if(c_wr[1]) 
+                            nstate = RW; 
                         else  
-                            nstate = st_wait;
+                            nstate = WAIT;
 
-            st_rw   :   if(HTRANS[1] & HSEL & HREADY & c_hit) 
-                            nstate = st_rw;
+            RW   :   if(HTRANS[1] & HSEL & HREADY & c_hit) 
+                            nstate = RW;
                         else if(HTRANS[1] & HSEL & HREADY & ~c_hit) 
-                            nstate = st_wait;
+                            nstate = WAIT;
         endcase
     end
 
     always @(posedge HCLK or negedge HRESETn)
-        if(!HRESETn) HREADYOUT <= 1'b1;
+        if(!HRESETn) 
+            HREADYOUT <= 1'b1;
         else
             case (state)
-                st_idle :   if(HTRANS[1] & HSEL & HREADY & c_hit) HREADYOUT <= 1'b1;
-                            else if(HTRANS[1] & HSEL & HREADY & ~c_hit) HREADYOUT <= 1'b0;
-                            else HREADYOUT <= 1'b1;
-                st_wait :   if(c_wr[1]) HREADYOUT <= 1'b1;
-                            else HREADYOUT <= 1'b0;
-                st_rw   :   if(HTRANS[1] & HSEL & HREADY & c_hit) HREADYOUT <= 1'b1;
-                            else if(HTRANS[1] & HSEL & HREADY & ~c_hit) HREADYOUT <= 1'b0;
+                IDLE :  if(HTRANS[1] & HSEL & HREADY & c_hit) 
+                            HREADYOUT <= 1'b1;
+                        else if(HTRANS[1] & HSEL & HREADY & ~c_hit) 
+                            HREADYOUT <= 1'b0;
+                        else 
+                            HREADYOUT <= 1'b1;
+                WAIT :  if(c_wr[1]) 
+                            HREADYOUT <= 1'b1;
+                        else 
+                            HREADYOUT <= 1'b0;
+                RW   :  if(HTRANS[1] & HSEL & HREADY & c_hit) 
+                            HREADYOUT <= 1'b1;
+                        else if(HTRANS[1] & HSEL & HREADY & ~c_hit) 
+                            HREADYOUT <= 1'b0;
             endcase
         
 
-    assign fr_rd        =   ( HTRANS[1] & HSEL & HREADY & ~c_hit & (state==st_idle) ) |
-                            ( HTRANS[1] & HSEL & HREADY & ~c_hit & (state==st_rw) );
+    assign fr_rd        =   ( HTRANS[1] & HSEL & HREADY & ~c_hit & (state==IDLE) ) |
+                            ( HTRANS[1] & HSEL & HREADY & ~c_hit & (state==RW) );
 
     assign c_A          =   last_HADDR[23:0];
     
@@ -145,9 +154,13 @@ module MS_SPI_XIP_CACHE_ahbl #(parameter NUM_LINES = 16) (
 
     assign HRDATA   = c_datao;
 
-    always @ (posedge HCLK) begin
-        c_wr[0] <= fr_done;
-        c_wr[1] <= c_wr[0];
+    always @ (posedge HCLK or negedge HRESETn) begin
+        if(~HRESETn) begin
+            c_wr <= 2'b0;
+        end else begin
+            c_wr[0] <= fr_done;
+            c_wr[1] <= c_wr[0];
+        end
     end
     
 endmodule

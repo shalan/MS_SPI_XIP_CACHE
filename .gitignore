@@ -52,7 +52,6 @@ Mkfile.old
 dkms.conf
 
 #verilog
-.vcd
 .vvp
 .out
 *.vcd

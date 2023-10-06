@@ -38,11 +38,12 @@ module FLASH_READER_SPI (
     output                          mosi
 );
 
-    localparam LINE_SIZE = 16;
-    localparam LINE_BYTES = LINE_SIZE;
-    localparam LINE_CYCLES = LINE_BYTES * 8;
+    localparam  LINE_SIZE = 16;
+    localparam  LINE_BYTES = LINE_SIZE;
+    localparam  LINE_CYCLES = LINE_BYTES * 8;
 
-    parameter IDLE=1'b0, READ=1'b1;
+    parameter   IDLE = 1'b0, 
+                READ = 1'b1;
 
     reg         state, nstate;
     reg [7:0]   counter;
@@ -71,13 +72,18 @@ module FLASH_READER_SPI (
 */
     
     always @ (posedge clk or negedge rst_n)
-        if(!rst_n) state = IDLE;
-        else state <= nstate;
+        if(!rst_n) 
+            state <= IDLE;
+        else 
+            state <= nstate;
 
     always @ (posedge clk or negedge rst_n)
-        if(!rst_n) sck <= 1'b0;
-        else if(~ce_n) sck <= ~ sck;
-        else if(state == IDLE) sck <= 1'b0;
+        if(!rst_n) 
+            sck <= 1'b0;
+        else if(~ce_n) 
+            sck <= ~ sck;
+        else if(state == IDLE) 
+            sck <= 1'b0;
 
     always @ (posedge clk or negedge rst_n)
         if(!rst_n) ce_n <= 1'b1;
@@ -174,7 +180,8 @@ module DMC_Nx16 #(parameter NUM_LINES = 16) (
         if(!rst_n) 
             for(i=0; i<NUM_LINES; i=i+1)
                 VALID[i] <= 1'b0;
-        else  if(wr)  VALID[index]    <= 1'b1;
+        else if(wr)  
+            VALID[index]    <= 1'b1;
 
     always @(posedge clk)
         if(wr) begin

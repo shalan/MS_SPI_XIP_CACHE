@@ -15,7 +15,7 @@
 `timescale          1ns/1ps
 `default_nettype    none
 
-module MS_QSPI_XIP_CACHE_ahbl_tb;
+module MS_SPI_XIP_CACHE_ahbl_tb;
     wire        sck;
     wire        ce_n;
     wire        miso;
@@ -32,7 +32,7 @@ module MS_QSPI_XIP_CACHE_ahbl_tb;
     wire        HREADYOUT;
     wire [31:0] HRDATA;
 
-    `include "ahbl_tasks.vh"
+    //`include "ahbl_tasks.vh"
 
     MS_SPI_XIP_CACHE_ahbl DUV (
         // AHB-Lite Slave Interface
@@ -68,15 +68,44 @@ module MS_QSPI_XIP_CACHE_ahbl_tb;
 
     initial begin
         $dumpfile("MS_SPI_XIP_CACHE_ahbl_tb.vcd");
-        $dumpvars;
+        $dumpvars(0, DUV);
         // Initializa flash memory ( the hex file inits first 10 bytes)
         #1 $readmemh("./vip/init.hex", FLASH.I0.memory);
-        # 8000 $finish;
     end
 
-    always #5 HCLK = ~HCLK;
-
+    always #10 HCLK = ~HCLK;
     assign HREADY = HREADYOUT;
+
+    task ahbl_w_read;
+        input [31:0] addr;
+        begin
+            //@(posedge HCLK);
+            wait (HREADY == 1'b1);
+            @(posedge HCLK);
+            #1;
+            HSEL = 1'b1;
+            HTRANS = 2'b10;
+            // First Phase
+            HADDR = addr;
+            @(posedge HCLK);
+            HSEL = 1'b0;
+            HTRANS = 2'b00;
+            #2;
+            wait (HREADY == 1'b1);
+            @(posedge HCLK) 
+                #1 $display("Read 0x%8x from 0x%8x", HRDATA, addr);
+        end
+    endtask
+
+    task check;
+        input [31:0] expected;
+        begin
+            if (expected == HRDATA)
+                #1 $display("Passed");
+            else
+                #1 $display("\nFailed! read 0x%8x expected 0x%8x\n", HRDATA, expected);
+        end
+    endtask
 
     initial begin
         HCLK = 0;
@@ -98,13 +127,40 @@ module MS_QSPI_XIP_CACHE_ahbl_tb;
         
         #100;
         
-        ahbl_w_read(0);
-        
-        ahbl_w_read(4);
+        #100;
+        repeat(100) begin
+            ahbl_w_read(0);
+            check(32'h03020100);
+            ahbl_w_read(4);
+            check(32'h07060504);
+            ahbl_w_read(8);
+            check(32'h0b0a0908);
+            ahbl_w_read(12);
+            check(32'h0f0e0d0c);
 
-        ahbl_w_read(8);
+            ahbl_w_read(16);
+            ahbl_w_read(20);
+            ahbl_w_read(24);
+            ahbl_w_read(28);
 
-        ahbl_w_read(16);
+            ahbl_w_read(0);
+            check(32'h03020100);
+            ahbl_w_read(4);
+            check(32'h07060504);
+            ahbl_w_read(8);
+            check(32'h0b0a0908);
+            ahbl_w_read(12);
+            check(32'h0f0e0d0c);
+            
+            ahbl_w_read(32);
+            check(32'h23222120);
+            ahbl_w_read(36);
+            check(32'h27262524);
+            ahbl_w_read(40);
+            check(32'h2b2a2928);
+            ahbl_w_read(44);
+            check(32'h2f2e2d2c);
+        end
        
         #2000;
         $finish;
